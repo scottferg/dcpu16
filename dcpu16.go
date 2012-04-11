@@ -18,18 +18,59 @@ type Dcpu struct {
     PC   Word
     SP   Word
     O    Word
-    Skip bool
 }
 
 var (
     cpu Dcpu
 
-    Memory [0x10000]Word
+    Memory [0xffff]Word
 )
 
+/********************************************************************************************************************************************
+
+0x0000 - 0x7FFD - program space. Can be used as pleased by DCPU software.
+0x7FFFE         - PC Speaker word. Least significant bit acts as flag of whether or not PC Speaker is playing, rest set frequency.
+0x7FFF          - screen mode word. 0x6FC means GraPhiCs mode, any other value means screen is in standard 32x16 text mode.
+0x8000 - 0x8200 - text buffer. Can be used as pleased if 0x7FFF == 0x6FC (graphics mode).
+0x8201          - FDD chunk ID. Each FDD chunk has 3582(dec) words of data and there is 211(dec) chunks (211th not full) that form 1.44MB of floppy
+0x8202 - 0x8FFF - FDD data
+0x9000          - keyboard word. Preserves last pressed key.
+0x9001 - 0x94FF - preserved for COMM peripherals
+0x9500 - 0xAD00 - VRAM. Used when screen mode word is set to 0x6FC (Graphics mode). Graphics resolution is 192x128 and each pixel is represented by 5 bits. Palette is fixed and has 16 colors (where 0x0 is black and 0xF is white). Can be used as pleased if screen mode flag (0x7FFF) is set to any different value than 0x6FC.
+0xAD01          - D411 preserved for NAVI peripherals.
+0xD412 - 0xE79A - preserved for COMM peripherals
+0xE79B - 0xFFFF - Stack
+
+******************************************************************************************************************************************/
+
 func (cpu *Dcpu) dumpRegisters() {
-    fmt.Println("  A  |  B  |  C  |  X  |  Y  |  Z  |  I  |  J  |  PC  ")
-    fmt.Printf("  %d  |  %d  |  %d  |  %d  |  %d  |  %d  |  %d  |  %d  |  %d  \n", cpu.A, cpu.B, cpu.C, cpu.X, cpu.Y, cpu.Z, cpu.I, cpu.J, cpu.PC)
+    fmt.Printf("A: %d B: %d C: %d X: %d Y: %d Z: %d I: %d J: %d PC: %d\n", cpu.A, cpu.B, cpu.C, cpu.X, cpu.Y, cpu.Z, cpu.I, cpu.J, cpu.PC - 1)
+}
+
+func (cpu *Dcpu) WordCount(opcode Word) Word {
+    a := (opcode >> 4) & 0x3f
+    b := (opcode >> 10) & 0x3f
+
+    a, _ = cpu.processOperand(a)
+    b, _ = cpu.processOperand(b)
+
+	count := Word(1)
+
+	switch {
+	case a >= 16 && a <= 23:
+	case a == 30:
+	case a == 31:
+		count++
+	}
+
+	switch {
+	case b >= 16 && b <= 23:
+	case b == 30:
+	case b == 31:
+		count++
+	}
+
+	return count
 }
 
 func (cpu *Dcpu) processOperand(operand Word) (value Word, assignee *Word) {
@@ -67,28 +108,28 @@ func (cpu *Dcpu) processOperand(operand Word) (value Word, assignee *Word) {
     case 15:
         value = cpu.J
     case 16:
-        assignee = &Memory[cpu.PC + cpu.A]
+        assignee = &Memory[Memory[cpu.PC] + cpu.A]
         cpu.PC++
     case 17:
-        assignee = &Memory[cpu.PC + cpu.B]
+        assignee = &Memory[Memory[cpu.PC] + cpu.B]
         cpu.PC++
     case 18:
-        assignee = &Memory[cpu.PC + cpu.C]
+        assignee = &Memory[Memory[cpu.PC] + cpu.C]
         cpu.PC++
     case 19:
-        assignee = &Memory[cpu.PC + cpu.X]
+        assignee = &Memory[Memory[cpu.PC] + cpu.X]
         cpu.PC++
     case 20:
-        assignee = &Memory[cpu.PC + cpu.Y]
+        assignee = &Memory[Memory[cpu.PC] + cpu.Y]
         cpu.PC++
     case 21:
-        assignee = &Memory[cpu.PC + cpu.Z]
+        assignee = &Memory[Memory[cpu.PC] + cpu.Z]
         cpu.PC++
     case 22:
-        assignee = &Memory[cpu.PC + cpu.I]
+        assignee = &Memory[Memory[cpu.PC] + cpu.I]
         cpu.PC++
     case 23:
-        assignee = &Memory[cpu.PC + cpu.J]
+        assignee = &Memory[Memory[cpu.PC] + cpu.J]
         cpu.PC++
     case 24:
         assignee = &Memory[cpu.SP]
@@ -111,10 +152,10 @@ func (cpu *Dcpu) processOperand(operand Word) (value Word, assignee *Word) {
         value = Memory[cpu.PC]
         cpu.PC++
     default:
-        value = operand
+        value = operand - 32
     }
 
-    if (assignee != nil) {
+    if assignee != nil {
         value = *assignee
     }
 
@@ -125,23 +166,29 @@ func (cpu *Dcpu) Step() {
     opcode := Memory[cpu.PC]
     cpu.PC++
 
-    if (cpu.Skip) {
-        cpu.PC++
-        cpu.Skip = false
-    }
-
     instruction := opcode & 0xf
     a := (opcode >> 4) & 0x3f
     b := (opcode >> 10) & 0x3f
 
     var assignable *Word
 
-    a, assignable = cpu.processOperand(a)
-    b, _ = cpu.processOperand(b)
+    if instruction != 0 {
+        a, assignable = cpu.processOperand(a)
+        b, _ = cpu.processOperand(b)
+    }
 
     switch instruction {
     case 0:
-        // Do nothing yet
+        instruction, a = a, b
+
+        switch instruction {
+        case 1:
+            _, assignable = cpu.processOperand(0x1a)
+            a, _ = cpu.processOperand(b)
+
+            *assignable = cpu.PC
+            cpu.PC = a
+        }
     case 1:
         // SET a, b
         *assignable = b
@@ -177,23 +224,23 @@ func (cpu *Dcpu) Step() {
         *assignable = a ^ b
     case 12:
         // IFE a, b
-        if (a == b) {
-            cpu.Skip = true
+        if a != b {
+            cpu.PC += cpu.WordCount(Memory[cpu.PC])
         }
     case 13:
         // IFN a, b
-        if (a != b) {
-            cpu.Skip = true
+        if a == b {
+            cpu.PC += cpu.WordCount(Memory[cpu.PC])
         }
     case 14:
         // IFG a, b
-        if (a > b) {
-            cpu.Skip = true
+        if !(a > b) {
+            cpu.PC += cpu.WordCount(Memory[cpu.PC])
         }
     case 15:
         // IFB a, b
-        if (a & b != 0) {
-            cpu.Skip = true
+        if a & b == 0 {
+            cpu.PC += cpu.WordCount(Memory[cpu.PC])
         }
     }
 
@@ -202,11 +249,15 @@ func (cpu *Dcpu) Step() {
 
 func main() {
     program := []Word{
-        0x7c01, 0x0030, 0x7de1, 0x1000, 0x0020, 0x7803, 0x1000,
+        0x7c01, 0x0030, 0x7de1, 0x1000, 0x0020, 0x7803, 0x1000, 0xc00d,
+        0x7dc1, 0x001a, 0xa861, 0x7c01, 0x2000, 0x2161, 0x2000, 0x8463,
+        0x806d, 0x7dc1, 0x000d, 0x9031, 0x7c10, 0x0018, 0x7dc1, 0x001a,
+        0x9037, 0x61c1, 0x7dc1, 0x001a, 0x0000, 0x0000, 0x0000, 0x0000,
     }
 
     cpu := new(Dcpu)
     cpu.PC = 0
+    cpu.SP = 0xffff
 
     for index, value := range program {
         Memory[index] = value
