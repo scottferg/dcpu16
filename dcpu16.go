@@ -263,7 +263,7 @@ func main() {
         Memory[index] = value
     }
 
-    for ; int(cpu.PC) < len(program); {
+    for int(cpu.PC) < len(program) {
         cpu.Step()
     }
 }
