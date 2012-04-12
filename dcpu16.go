@@ -44,33 +44,15 @@ var (
 ******************************************************************************************************************************************/
 
 func (cpu *Dcpu) dumpRegisters() {
-    fmt.Printf("A: %d B: %d C: %d X: %d Y: %d Z: %d I: %d J: %d PC: %d\n", cpu.A, cpu.B, cpu.C, cpu.X, cpu.Y, cpu.Z, cpu.I, cpu.J, cpu.PC - 1)
+    fmt.Printf("A: %d B: %x C: %d X: %d Y: %d Z: %d I: %d J: %d PC: %d\n", cpu.A, cpu.B, cpu.C, cpu.X, cpu.Y, cpu.Z, cpu.I, cpu.J, cpu.PC - 1)
 }
 
-func (cpu *Dcpu) WordCount(opcode Word) Word {
-    a := (opcode >> 4) & 0x3f
-    b := (opcode >> 10) & 0x3f
-
-    a, _ = cpu.processOperand(a)
-    b, _ = cpu.processOperand(b)
-
-	count := Word(1)
-
-	switch {
-	case a >= 16 && a <= 23:
-	case a == 30:
-	case a == 31:
-		count++
-	}
-
-	switch {
-	case b >= 16 && b <= 23:
-	case b == 30:
-	case b == 31:
-		count++
-	}
-
-	return count
+func (cpu *Dcpu) dumpVideoRam() {
+    for i := 0x8000; i < 0x8200; i++ {
+        if Memory[i] > 0 {
+            fmt.Printf("D: %d Register I: %d\n", Memory[i] & 0x7f, cpu.I)
+        }
+    }
 }
 
 func (cpu *Dcpu) processOperand(operand Word) (value Word, assignee *Word) {
@@ -225,45 +207,25 @@ func (cpu *Dcpu) Step() {
     case 12:
         // IFE a, b
         if a != b {
-            cpu.PC += cpu.WordCount(Memory[cpu.PC])
+            cpu.PC++
         }
     case 13:
         // IFN a, b
         if a == b {
-            cpu.PC += cpu.WordCount(Memory[cpu.PC])
+            cpu.PC++
         }
     case 14:
         // IFG a, b
         if !(a > b) {
-            cpu.PC += cpu.WordCount(Memory[cpu.PC])
+            cpu.PC++
         }
     case 15:
         // IFB a, b
         if a & b == 0 {
-            cpu.PC += cpu.WordCount(Memory[cpu.PC])
+            cpu.PC++
         }
     }
 
-    cpu.dumpRegisters()
-}
-
-func main() {
-    program := []Word{
-        0x7c01, 0x0030, 0x7de1, 0x1000, 0x0020, 0x7803, 0x1000, 0xc00d,
-        0x7dc1, 0x001a, 0xa861, 0x7c01, 0x2000, 0x2161, 0x2000, 0x8463,
-        0x806d, 0x7dc1, 0x000d, 0x9031, 0x7c10, 0x0018, 0x7dc1, 0x001a,
-        0x9037, 0x61c1, 0x7dc1, 0x001a, 0x0000, 0x0000, 0x0000, 0x0000,
-    }
-
-    cpu := new(Dcpu)
-    cpu.PC = 0
-    cpu.SP = 0xffff
-
-    for index, value := range program {
-        Memory[index] = value
-    }
-
-    for ; int(cpu.PC) < len(program); {
-        cpu.Step()
-    }
+    // cpu.dumpRegisters()
+    // cpu.dumpVideoRam()
 }
