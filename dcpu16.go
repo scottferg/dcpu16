@@ -44,7 +44,20 @@ var (
 ******************************************************************************************************************************************/
 
 func (cpu *Dcpu) dumpRegisters() {
-    fmt.Printf("A: %d B: %x C: %d X: %d Y: %d Z: %d I: %d J: %d PC: %d\n", cpu.A, cpu.B, cpu.C, cpu.X, cpu.Y, cpu.Z, cpu.I, cpu.J, cpu.PC - 1)
+    // fmt.Printf("A: %d B: %x C: %d X: %d Y: %d Z: %d I: %d J: %d PC: %d\n", cpu.A, cpu.B, cpu.C, cpu.X, cpu.Y, cpu.Z, cpu.I, cpu.J, cpu.PC - 1)
+    Memory[0x8000] = 65 + (0x35 << 8)
+    Memory[0x8001] = 58
+    Memory[0x8002] = 32
+    a := []byte(fmt.Sprintf("%d", cpu.A))
+    Memory[0x8003] = Word(a[0])
+    Memory[0x8004] = 32
+
+    Memory[0x8005] = 88 + (0x42 << 8)
+    Memory[0x8006] = 58
+    Memory[0x8007] = 32
+    x := []byte(fmt.Sprintf("%d", cpu.X))
+    Memory[0x8008] = Word(x[0])
+    Memory[0x8009] = 32
 }
 
 func (cpu *Dcpu) dumpVideoRam() {
