@@ -11,8 +11,10 @@ func run(program []Word) {
     cpu.PC = 0
     cpu.SP = 0xffff
 
+    /*
     video := new(Video)
     video.Init()
+    */
 
 	event_queue := make(chan termbox.Event)
 	go func() {
@@ -37,11 +39,11 @@ runloop:
 			}
         default:
             cpu.Step()
-            video.DrawScreen()
+            // video.DrawScreen()
         }
     }
 
-    video.Close()
+    // video.Close()
 }
 
 func main() {

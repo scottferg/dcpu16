@@ -55,13 +55,13 @@ func (v *Video) DrawScreen() {
 
             fg := GetColor(colors & 0xf)
             bg := GetColor(colors >> 4)
-
-            character := rune(data & 0x7f)
-            termbox.SetCell(x, y, character, fg, bg)
             */
 
             character := rune(data & 0x7f)
             termbox.SetCell(x, y, character, termbox.ColorDefault, termbox.ColorDefault)
+
+//            character := rune(data & 0x7f)
+//            termbox.SetCell(x, y, character, termbox.ColorDefault, termbox.ColorDefault)
             i++
         }
     }
