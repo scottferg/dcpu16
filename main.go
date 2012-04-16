@@ -8,8 +8,11 @@ import (
 
 func run(program []Word) {
     cpu := new(Dcpu)
+
+    Memory = make([]Word, 0xffff)
+
     cpu.PC = 0
-    cpu.SP = 0xffff
+    cpu.SP = 0xfffe
 
     /*
     video := new(Video)

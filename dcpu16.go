@@ -2,7 +2,6 @@ package main
 
 import (
     "fmt"
-    "time"
 )
 
 type Word uint16
@@ -24,11 +23,11 @@ type Dcpu struct {
 var (
     cpu Dcpu
 
-    Memory [0xffff]Word
+    Memory []Word
 )
 
 func (cpu *Dcpu) dumpRegisters() {
-    fmt.Printf("A: %d B: %x C: %d X: %d Y: %d Z: %d I: %d J: %d PC: %d\n", cpu.A, cpu.B, cpu.C, cpu.X, cpu.Y, cpu.Z, cpu.I, cpu.J, cpu.PC - 1)
+    fmt.Printf("A: %d B: %x C: %d X: %d Y: %d Z: %d I: %d J: %d PC: %d SP: %d\n", cpu.A, cpu.B, cpu.C, cpu.X, cpu.Y, cpu.Z, cpu.I, cpu.J, cpu.PC - 1, cpu.SP)
     /*
     Memory[0x8000] = 65 + (0x35 << 8)
     Memory[0x8001] = 58
@@ -253,6 +252,4 @@ func (cpu *Dcpu) Step() {
 
     cpu.dumpRegisters()
     // cpu.dumpVideoRam()
-
-    time.Sleep(500 * time.Millisecond)
 }

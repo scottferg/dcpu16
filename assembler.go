@@ -48,7 +48,7 @@ func valueFromHex(operand string) (op Word) {
 func getOperand(operand string) (op Word, nextWord Word) {
 
     if _, ok := labels[operand]; ok {
-        fmt.Printf("%s: 0x%x\n", operand, labels[operand])
+        fmt.Println("Got a label: " + operand)
         return 0x1f, Word(labels[operand])
     }
 
@@ -218,40 +218,69 @@ func writeToBuffer(ins Word, nextA Word, nextB Word) {
     }
 }
 
+func isMultiwordOperand(operand Word) (multi bool) {
+    switch operand {
+    case 0x1e:
+        multi = true
+    case 0x1f:
+        multi = true
+    default:
+        multi = false
+    }
+
+    return
+}
+
+func scanForLabels(source []string) {
+    wordCount := 0
+    for _, sourceLine := range source {
+        line := strings.Split(strings.Trim(sourceLine, " "), ";")[0]
+
+        if len(line) == 0 {
+            continue
+        }
+
+        operands := strings.Split(line[3:], ", ")
+
+        aaaa := strings.Trim(operands[0], " ")
+        a, _ := getOperand(aaaa)
+
+        if isMultiwordOperand(a) {
+            fmt.Println("Operand: " + aaaa)
+            wordCount++
+        }
+
+        if len(operands) > 1 {
+            bbbb := strings.Trim(operands[1], " ")
+            b, _ := getOperand(bbbb)
+
+            if isMultiwordOperand(b) {
+                fmt.Println("Operand: " + bbbb)
+                wordCount++
+            }
+        }
+
+        if matched, _ := regexp.MatchString(LABEL, line); matched {
+            index := strings.Index(line, " ")
+            label := line[1:index]
+
+            labels[label] = wordCount
+        }
+
+        wordCount++
+    }
+}
+
 func main() {
     labels = make(map[string]int)
 
     if contents, err := ioutil.ReadFile(os.Args[1]); err == nil {
         source := strings.Split(string(contents), "\n")
 
-        // First pass to match line numbers to labels
+        scanForLabels(source)
+        scanForLabels(source)
+
         lineNumber := 1
-        /*
-        for _, sourceLine := range source {
-            line := strings.Split(strings.Trim(sourceLine, " "), ";")[0]
-
-            // Happens if the line was pure whitespace
-            if len(line) == 0 {
-                continue
-            }
-
-            var label string
-
-            if matched, _ := regexp.MatchString(LABEL, line); matched {
-                // Find the first whitespace character so we know
-                // where the label ends
-                index := strings.Index(line, " ")
-                label = line[1:index]
-
-                labels[label] = lineNumber
-            }
-
-            lineNumber++
-        }
-        */
-
-        // Second pass to compile source
-        lineNumber = 1
         for _, sourceLine := range source {
             line := strings.Split(strings.Trim(sourceLine, " "), ";")[0]
 
@@ -260,13 +289,9 @@ func main() {
             }
 
             // Shave off the label and whitespace
-            if matched, _ := regexp.MatchString(LABEL, line); matched {
-                index := strings.Index(line, " ")
-                label := line[1:index]
-
-                labels[label] = len(buffer.Bytes()) / 2
-
-                fmt.Println(labels[label])
+            expression, _ := regexp.Compile(LABEL)
+            if match := expression.FindString(line); len(match) > 0 {
+                line = strings.Trim(strings.Replace(line, match, "", -1), " ")
             }
 
             opcode := line[:3]
@@ -289,8 +314,6 @@ func main() {
 
             bbbb := strings.Trim(operands[1], " ")
             b, nextBWord := getOperand(bbbb)
-
-            fmt.Printf("0x%x 0x%x 0x%x\n", op, a, b)
 
             instruction := op + (a << 4) + (b << 10)
 
