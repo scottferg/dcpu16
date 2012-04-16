@@ -48,7 +48,6 @@ func valueFromHex(operand string) (op Word) {
 func getOperand(operand string) (op Word, nextWord Word) {
 
     if _, ok := labels[operand]; ok {
-        fmt.Println("Got a label: " + operand)
         return 0x1f, Word(labels[operand])
     }
 
@@ -246,7 +245,6 @@ func scanForLabels(source []string) {
         a, _ := getOperand(aaaa)
 
         if isMultiwordOperand(a) {
-            fmt.Println("Operand: " + aaaa)
             wordCount++
         }
 
@@ -255,7 +253,6 @@ func scanForLabels(source []string) {
             b, _ := getOperand(bbbb)
 
             if isMultiwordOperand(b) {
-                fmt.Println("Operand: " + bbbb)
                 wordCount++
             }
         }
