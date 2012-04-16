@@ -217,8 +217,9 @@ func writeToBuffer(ins Word, nextA Word, nextB Word) {
     }
 }
 
-func isMultiwordOperand(operand Word) (multi bool) {
-    switch operand {
+func isMultiwordOperand(operand string) (multi bool) {
+    op, _ := getOperand(operand)
+    switch op {
     case 0x1e:
         multi = true
     case 0x1f:
@@ -227,10 +228,14 @@ func isMultiwordOperand(operand Word) (multi bool) {
         multi = false
     }
 
+    if matched, _ := regexp.MatchString(MEMORY_AND_REGISTER, operand); matched {
+        multi = true
+    }
+
     return
 }
 
-func scanForLabels(source []string) {
+func scanForLabelAddresses(source []string) {
     wordCount := 0
     for _, sourceLine := range source {
         line := strings.Split(strings.Trim(sourceLine, " "), ";")[0]
@@ -239,32 +244,52 @@ func scanForLabels(source []string) {
             continue
         }
 
+        var label string
+        expression, _ := regexp.Compile(LABEL)
+        if match := expression.FindString(line); match != "" {
+            index := strings.Index(line, " ")
+            label = line[1:index]
+
+            line = strings.Trim(strings.Replace(line, match, "", -1), " ")
+
+            labels[label] = wordCount
+        }
+
         operands := strings.Split(line[3:], ", ")
 
         aaaa := strings.Trim(operands[0], " ")
-        a, _ := getOperand(aaaa)
-
-        if isMultiwordOperand(a) {
+        if isMultiwordOperand(aaaa) {
             wordCount++
         }
 
         if len(operands) > 1 {
             bbbb := strings.Trim(operands[1], " ")
-            b, _ := getOperand(bbbb)
-
-            if isMultiwordOperand(b) {
+            if isMultiwordOperand(bbbb) {
                 wordCount++
             }
         }
 
-        if matched, _ := regexp.MatchString(LABEL, line); matched {
-            index := strings.Index(line, " ")
-            label := line[1:index]
+        wordCount++
+    }
+}
 
-            labels[label] = wordCount
+func scanForLabels(source []string) {
+    for _, sourceLine := range source {
+        line := strings.Split(strings.Trim(sourceLine, " "), ";")[0]
+
+        if len(line) == 0 {
+            continue
         }
 
-        wordCount++
+        var label string
+        if matched, _ := regexp.MatchString(LABEL, line); matched {
+            index := strings.Index(line, " ")
+            label = line[1:index]
+
+            labels[label] = 0x0
+
+            fmt.Println("Wrote label " + label)
+        }
     }
 }
 
@@ -275,7 +300,7 @@ func main() {
         source := strings.Split(string(contents), "\n")
 
         scanForLabels(source)
-        scanForLabels(source)
+        scanForLabelAddresses(source)
 
         lineNumber := 1
         for _, sourceLine := range source {
