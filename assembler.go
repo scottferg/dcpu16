@@ -344,6 +344,6 @@ func main() {
             lineNumber++
         }
 
-        ioutil.WriteFile("output.dasm", buffer.Bytes(), 0666)
+        ioutil.WriteFile("output.dcpx", buffer.Bytes(), 0666)
     }
 }
