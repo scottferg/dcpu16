@@ -1,9 +1,25 @@
-DCPU16 emulator written in Go
+DCPU16 software stack written in Go
 =====
 
-Currently runs Notch's test program. Replace the program hardcoded in main() to run something custom.
+# Contains
+* Emulator
+* Assembler
+* Disassembler
 
-###TODO:
-* Load programs from the command line
-* Implement proper output
-* Support data and reserve ASM features
+# To run the emulator
+    $ go run dcpu16.go video.go main.go <inputfile.dcpx>
+
+# To build the emulator
+    $ go build dcpu16.go video.go main.go
+
+# To run the assembler
+    $ go run dcpu16.go assembler.go <inputfile.dasm>
+
+# To build the assembler
+    $ go build dcpu16.go assembler.go
+
+# To run the disassembler
+    $ go run dcpu16.go disassembler.go <inputfile.dcpx>
+
+# To build the disassembler
+    $ go run dcpu16.go disassembler.go
