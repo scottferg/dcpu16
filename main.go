@@ -4,7 +4,6 @@ import (
     "github.com/nsf/termbox-go"
     "io/ioutil"
     "os"
-    "fmt"
 )
 
 func run(program []Word) {
@@ -55,7 +54,6 @@ func main() {
         var program []Word
 
         for i := 0; i < fileLength; i += 2 {
-            fmt.Printf("%d | %d\n", i, i + 1)
             program = append(program, (Word(contents[i]) << 8) + Word(contents[i + 1]))
         }
 

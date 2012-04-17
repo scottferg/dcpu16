@@ -417,8 +417,6 @@ func main() {
 
             instruction := op + (a << 4) + (b << 10)
 
-            // fmt.Printf("%s: 0x%x\n", line, instruction)
-
             writeToBuffer(instruction, nextAWord, nextBWord)
 
             lineNumber++

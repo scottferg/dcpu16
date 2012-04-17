@@ -2,7 +2,6 @@ package main
 
 import (
     "github.com/nsf/termbox-go"
-    // "fmt"
 )
 
 type Video struct {}
@@ -46,22 +45,14 @@ func (v *Video) DrawScreen() {
         for x := 0; x < 32; x++ {
             data := Memory[0x8000 + i]
 
-            if data > 0 {
-                // fmt.Printf("Value: %X\n", data)
-            }
-
-            /*
-            colors := data >> 8
+            colors := data >> 7
 
             fg := GetColor(colors & 0xf)
             bg := GetColor(colors >> 4)
-            */
 
             character := rune(data & 0x7f)
-            termbox.SetCell(x, y, character, termbox.ColorDefault, termbox.ColorDefault)
+            termbox.SetCell(x, y, character, fg, bg)
 
-//            character := rune(data & 0x7f)
-//            termbox.SetCell(x, y, character, termbox.ColorDefault, termbox.ColorDefault)
             i++
         }
     }
