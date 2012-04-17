@@ -20,7 +20,8 @@ var (
     LABEL               string = "^:[A-Za-z]+[^ ]"
     HEX                 string = "^0x[0-9a-zA-Z]+$"
     MEMORY              string = "^\\[0x[0-9a-zA-Z]+\\]$"
-    MEMORY_AND_REGISTER string = "^\\[0x[0-9a-zA-Z]+\\+[A-Z]+\\]$"
+    MEMORY_AND_REGISTER string = "^\\[0x[0-9a-zA-Z]+\\+[A-Za-z]+\\]$"
+    LABEL_AND_REGISTER  string = "^\\[[A-Za-z]+\\+[A-Za-z]+\\]$"
 )
 
 func valueFromHex(operand string) (op Word) {
@@ -51,8 +52,11 @@ func getOperand(operand string) (op Word, nextWord Word) {
         return 0x1f, Word(labels[operand])
     }
 
-    if matched, _ := regexp.MatchString(MEMORY_AND_REGISTER, operand); matched {
-        switch operand[len(operand) - 2:len(operand) - 1] {
+    memoryRegisterMatched, _ := regexp.MatchString(MEMORY_AND_REGISTER, operand)
+    memoryLabelMatched, _ := regexp.MatchString(LABEL_AND_REGISTER, operand)
+
+    if memoryRegisterMatched || memoryLabelMatched {
+        switch strings.ToUpper(operand[len(operand) - 2:len(operand) - 1]) {
         case "A":
             op = 0x10
         case "B":
@@ -71,11 +75,15 @@ func getOperand(operand string) (op Word, nextWord Word) {
             op = 0x17
         }
 
-        expression, _ := regexp.Compile("0x[0-9a-zA-Z]+")
+        hex, _ := regexp.Compile("0x[0-9a-zA-Z]+")
+        label, _ := regexp.Compile("[A-Za-z]+[^+]")
 
         var match string
-        if match = expression.FindString(operand); len(match) > 0 {
+        if match = hex.FindString(operand); len(match) > 0 {
             nextWord = valueFromHex(match)
+        } else if matched, _ := regexp.MatchString(operand, LABEL_AND_REGISTER); matched {
+            match = label.FindString(operand)
+            nextWord = Word(labels[match])
         }
 
         return
@@ -85,7 +93,7 @@ func getOperand(operand string) (op Word, nextWord Word) {
         return 0x1e, valueFromHex(strings.Trim(operand, "[]"))
     }
 
-    switch operand {
+    switch strings.ToUpper(operand) {
     case "A":
         op = 0x00
     case "B":
@@ -159,7 +167,7 @@ func getOperand(operand string) (op Word, nextWord Word) {
 }
 
 func getOpcode(opcode string) (op Word, e error) {
-    switch opcode {
+    switch strings.ToUpper(opcode) {
     case "SET":
         op = 0x1
     case "ADD":
@@ -193,6 +201,35 @@ func getOpcode(opcode string) (op Word, e error) {
     }
 
     return
+}
+
+func parseDatString(dat string) {
+    fields := strings.Split(dat, ", ")
+
+    var color Word
+    writeString := func(str string) {
+        for _, ch := range str {
+            if color != 0 {
+                buffer.WriteByte(byte(color))
+            } else {
+                buffer.WriteByte(0x00)
+            }
+
+            buffer.WriteByte(byte(ch))
+        }
+    }
+
+    for _, field := range fields {
+        field = strings.Trim(field, "\"")
+        if matched, _ := regexp.MatchString(HEX, field); matched {
+            color = valueFromHex(field) << 7
+        } else if field == "0" {
+            buffer.WriteByte(byte(0x00))
+            buffer.WriteByte(byte(0x00))
+        } else {
+            writeString(field)
+        }
+    }
 }
 
 func getWord(word Word) ([]byte) {
@@ -232,6 +269,10 @@ func isMultiwordOperand(operand string) (multi bool) {
         multi = true
     }
 
+    if matched, _ := regexp.MatchString(LABEL_AND_REGISTER, operand); matched {
+        multi = true
+    }
+
     return
 }
 
@@ -248,11 +289,36 @@ func scanForLabelAddresses(source []string) {
         expression, _ := regexp.Compile(LABEL)
         if match := expression.FindString(line); match != "" {
             index := strings.Index(line, " ")
-            label = line[1:index]
+
+            if index == -1 {
+                label = line[1:]
+            } else {
+                label = line[1:index]
+            }
 
             line = strings.Trim(strings.Replace(line, match, "", -1), " ")
 
             labels[label] = wordCount
+        }
+
+        if len(line) == 0 {
+            continue
+        }
+
+        countDatLine := func(dat string) {
+            fields := strings.Split(dat, "\", ")
+            for _, field := range fields {
+                field = strings.Trim(field, "\"")
+                if matched, _ := regexp.MatchString(HEX, string(field)); !matched {
+                    wordCount += len(string(field))
+                }
+            }
+        }
+
+        if strings.ToLower(line[:3]) == "dat" {
+            countDatLine(strings.Trim(line[3:], " "))
+
+            continue
         }
 
         operands := strings.Split(line[3:], ", ")
@@ -284,11 +350,14 @@ func scanForLabels(source []string) {
         var label string
         if matched, _ := regexp.MatchString(LABEL, line); matched {
             index := strings.Index(line, " ")
-            label = line[1:index]
+
+            if index == -1 {
+                label = line[1:]
+            } else {
+                label = line[1:index]
+            }
 
             labels[label] = 0x0
-
-            fmt.Println("Wrote label " + label)
         }
     }
 }
@@ -316,9 +385,18 @@ func main() {
                 line = strings.Trim(strings.Replace(line, match, "", -1), " ")
             }
 
+            if len(line) == 0 {
+                continue
+            }
+
             opcode := line[:3]
 
             op, _ := getOpcode(opcode)
+
+            if opcode == "dat" {
+                parseDatString(strings.Trim(line[3:], " "))
+                continue
+            }
 
             operands := strings.Split(line[3:], ", ")
 
@@ -338,6 +416,8 @@ func main() {
             b, nextBWord := getOperand(bbbb)
 
             instruction := op + (a << 4) + (b << 10)
+
+            // fmt.Printf("%s: 0x%x\n", line, instruction)
 
             writeToBuffer(instruction, nextAWord, nextBWord)
 

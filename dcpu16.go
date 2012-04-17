@@ -27,7 +27,7 @@ var (
 )
 
 func (cpu *Dcpu) dumpRegisters() {
-    fmt.Printf("A: %d B: %x C: %d X: %d Y: %d Z: %d I: %d J: %d PC: %d SP: %d\n", cpu.A, cpu.B, cpu.C, cpu.X, cpu.Y, cpu.Z, cpu.I, cpu.J, cpu.PC - 1, cpu.SP)
+    fmt.Printf("A: 0x%x B: 0x%x C: 0x%x X: 0x%x Y: 0x%x Z: 0x%x I: 0x%x J: 0x%x PC: 0x%x SP: 0x%x\n", cpu.A, cpu.B, cpu.C, cpu.X, cpu.Y, cpu.Z, cpu.I, cpu.J, cpu.PC - 1, cpu.SP)
     /*
     Memory[0x8000] = 65 + (0x35 << 8)
     Memory[0x8001] = 58
@@ -250,6 +250,8 @@ func (cpu *Dcpu) Step() {
         }
     }
 
-    cpu.dumpRegisters()
+    // cpu.dumpRegisters()
     // cpu.dumpVideoRam()
+
+    // time.Sleep(50 * time.Millisecond)
 }

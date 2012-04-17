@@ -4,6 +4,7 @@ import (
     "github.com/nsf/termbox-go"
     "io/ioutil"
     "os"
+    "fmt"
 )
 
 func run(program []Word) {
@@ -14,10 +15,8 @@ func run(program []Word) {
     cpu.PC = 0
     cpu.SP = 0xfffe
 
-    /*
     video := new(Video)
     video.Init()
-    */
 
 	event_queue := make(chan termbox.Event)
 	go func() {
@@ -32,7 +31,7 @@ func run(program []Word) {
     }
 
 runloop:
-    for ; int(cpu.PC) < len(program); {
+    for int(cpu.PC) < len(program) {
         cpu.Step()
 
 		select {
@@ -42,11 +41,11 @@ runloop:
 			}
         default:
             cpu.Step()
-            // video.DrawScreen()
+            video.DrawScreen()
         }
     }
 
-    // video.Close()
+    video.Close()
 }
 
 func main() {
@@ -56,6 +55,7 @@ func main() {
         var program []Word
 
         for i := 0; i < fileLength; i += 2 {
+            fmt.Printf("%d | %d\n", i, i + 1)
             program = append(program, (Word(contents[i]) << 8) + Word(contents[i + 1]))
         }
 
