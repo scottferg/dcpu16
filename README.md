@@ -6,20 +6,20 @@ DCPU16 software stack written in Go
 * Assembler
 * Disassembler
 
-# To run the emulator
+## To run the emulator
     $ go run dcpu16.go video.go main.go <inputfile.dcpx>
 
-# To build the emulator
+## To build the emulator
     $ go build dcpu16.go video.go main.go
 
-# To run the assembler
+## To run the assembler
     $ go run dcpu16.go assembler.go <inputfile.dasm>
 
-# To build the assembler
+## To build the assembler
     $ go build dcpu16.go assembler.go
 
-# To run the disassembler
+## To run the disassembler
     $ go run dcpu16.go disassembler.go <inputfile.dcpx>
 
-# To build the disassembler
+## To build the disassembler
     $ go run dcpu16.go disassembler.go
