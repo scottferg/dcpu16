@@ -117,35 +117,35 @@ func readInstruction(instruction Word) {
             fmt.Printf("JSR label")
         }
     case 1:
-        fmt.Printf("SET %s %s\n", aaaa, bbbb)
+        fmt.Printf("SET %s, %s\n", aaaa, bbbb)
     case 2:
-        fmt.Printf("ADD %s %s\n", aaaa, bbbb)
+        fmt.Printf("ADD %s, %s\n", aaaa, bbbb)
     case 3:
-        fmt.Printf("SUB %s %s\n", aaaa, bbbb)
+        fmt.Printf("SUB %s, %s\n", aaaa, bbbb)
     case 4:
-        fmt.Printf("MUL %s %s\n", aaaa, bbbb)
+        fmt.Printf("MUL %s, %s\n", aaaa, bbbb)
     case 5:
-        fmt.Printf("DIV %s %s\n", aaaa, bbbb)
+        fmt.Printf("DIV %s, %s\n", aaaa, bbbb)
     case 6:
-        fmt.Printf("MOD %s %s\n", aaaa, bbbb)
+        fmt.Printf("MOD %s, %s\n", aaaa, bbbb)
     case 7:
-        fmt.Printf("SHL %s %s\n", aaaa, bbbb)
+        fmt.Printf("SHL %s, %s\n", aaaa, bbbb)
     case 8:
-        fmt.Printf("SHR %s %s\n", aaaa, bbbb)
+        fmt.Printf("SHR %s, %s\n", aaaa, bbbb)
     case 9:
-        fmt.Printf("AND %s %s\n", aaaa, bbbb)
+        fmt.Printf("AND %s, %s\n", aaaa, bbbb)
     case 10:
-        fmt.Printf("BOR %s %s\n", aaaa, bbbb)
+        fmt.Printf("BOR %s, %s\n", aaaa, bbbb)
     case 11:
-        fmt.Printf("XOR %s %s\n", aaaa, bbbb)
+        fmt.Printf("XOR %s, %s\n", aaaa, bbbb)
     case 12:
-        fmt.Printf("IFE %s %s\n", aaaa, bbbb)
+        fmt.Printf("IFE %s, %s\n", aaaa, bbbb)
     case 13:
-        fmt.Printf("IFN %s %s\n", aaaa, bbbb)
+        fmt.Printf("IFN %s, %s\n", aaaa, bbbb)
     case 14:
-        fmt.Printf("IFG %s %s\n", aaaa, bbbb)
+        fmt.Printf("IFG %s, %s\n", aaaa, bbbb)
     case 15:
-        fmt.Printf("IFB %s %s\n", aaaa, bbbb)
+        fmt.Printf("IFB %s, %s\n", aaaa, bbbb)
     }
 }
 
