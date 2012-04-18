@@ -17,7 +17,7 @@ var (
 
     buffer = new(bytes.Buffer)
 
-    LABEL               string = "^:[A-Za-z]+[^ ]"
+    LABEL               string = "^:[\\w]+[^ ]"
     HEX                 string = "^0x[0-9a-zA-Z]+$"
     MEMORY              string = "^\\[0x[0-9a-zA-Z]+\\]$"
     MEMORY_AND_REGISTER string = "^\\[0x[0-9a-zA-Z]+\\+[A-Za-z]+\\]$"
@@ -209,12 +209,7 @@ func parseDatString(dat string) {
     var color Word
     writeString := func(str string) {
         for _, ch := range str {
-            if color != 0 {
-                buffer.WriteByte(byte(color))
-            } else {
-                buffer.WriteByte(0x00)
-            }
-
+            buffer.WriteByte(0x00)
             buffer.WriteByte(byte(ch))
         }
     }
@@ -222,7 +217,9 @@ func parseDatString(dat string) {
     for _, field := range fields {
         field = strings.Trim(field, "\"")
         if matched, _ := regexp.MatchString(HEX, field); matched {
-            color = valueFromHex(field) << 7
+            color = valueFromHex(field)
+            buffer.WriteByte(byte(color >> 8))
+            buffer.WriteByte(byte(color))
         } else if field == "0" {
             buffer.WriteByte(byte(0x00))
             buffer.WriteByte(byte(0x00))
@@ -301,16 +298,18 @@ func scanForLabelAddresses(source []string) {
             labels[label] = wordCount
         }
 
-        if len(line) == 0 {
+        if !(len(line) > 1) {
             continue
         }
 
         countDatLine := func(dat string) {
-            fields := strings.Split(dat, "\", ")
+            fields := strings.Split(dat, ", ")
             for _, field := range fields {
                 field = strings.Trim(field, "\"")
                 if matched, _ := regexp.MatchString(HEX, string(field)); !matched {
                     wordCount += len(string(field))
+                } else if matched, _ := regexp.MatchString(HEX, string(field)); matched {
+                    wordCount++
                 }
             }
         }
@@ -374,6 +373,7 @@ func main() {
         lineNumber := 1
         for _, sourceLine := range source {
             line := strings.Split(strings.Trim(sourceLine, " "), ";")[0]
+            fmt.Println(line)
 
             if len(line) == 0 {
                 continue
@@ -385,7 +385,7 @@ func main() {
                 line = strings.Trim(strings.Replace(line, match, "", -1), " ")
             }
 
-            if len(line) == 0 {
+            if !(len(line) > 1) {
                 continue
             }
 
