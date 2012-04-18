@@ -218,8 +218,9 @@ func parseDatString(dat string) {
         field = strings.Trim(field, "\"")
         if matched, _ := regexp.MatchString(HEX, field); matched {
             color = valueFromHex(field)
+
             buffer.WriteByte(byte(color >> 8))
-            buffer.WriteByte(byte(color))
+            buffer.WriteByte(byte(color & 0xff))
         } else if field == "0" {
             buffer.WriteByte(byte(0x00))
             buffer.WriteByte(byte(0x00))
@@ -373,7 +374,6 @@ func main() {
         lineNumber := 1
         for _, sourceLine := range source {
             line := strings.Split(strings.Trim(sourceLine, " "), ";")[0]
-            fmt.Println(line)
 
             if len(line) == 0 {
                 continue
@@ -393,7 +393,7 @@ func main() {
 
             op, _ := getOpcode(opcode)
 
-            if opcode == "dat" {
+            if strings.ToUpper(opcode) == "DAT" {
                 parseDatString(strings.Trim(line[3:], " "))
                 continue
             }
@@ -403,7 +403,7 @@ func main() {
             aaaa := strings.Trim(operands[0], " ")
             a, nextAWord := getOperand(aaaa)
 
-            if opcode == "JSR" {
+            if strings.ToUpper(opcode) == "JSR" {
                 op = 0x01 << 4
                 a = 0x1f << 10
 
