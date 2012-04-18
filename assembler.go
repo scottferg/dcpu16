@@ -157,7 +157,7 @@ func getOperand(operand string) (op Word, nextWord Word) {
             if literal < 32 {
                 op = literal + 32
             } else {
-                nextWord = literal + 32
+                nextWord = literal
                 op = 0x1f
             }
         }
